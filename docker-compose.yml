@@ -2,22 +2,23 @@ services:
   db:
     image: postgres:15
     environment:
-     POSTGRES_DB: insightflow
-     POSTGRES_USER: postgres
-     POSTGRES_PASSWORD: postgrespassword
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
     volumes:
       - postgres_data:/var/lib/postgresqldata
     ports:
       - "5432:5432"
   backend:
-   build : .
-   command : python manage.py runserver 0.0.0:8000
-   volumes:
-     - .:/app
-   ports:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
       - "8000:8000"
-   depends_on:
-    - db
+    depends_on:
+      - db
 volumes:
   postgres_data:
 
