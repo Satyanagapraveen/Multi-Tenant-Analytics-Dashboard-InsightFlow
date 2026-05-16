@@ -10,6 +10,11 @@ services:
       - postgres_data:/var/lib/postgresqldata
     ports:
       - "5432:5432"
+  redis:
+       image: redis:7-alpine
+       ports:
+         - "6739:6739"      
+
   backend:
     build: ./backend
     command: python manage.py runserver 0.0.0.0:8000
@@ -19,8 +24,12 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - redis
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - GOOGLE_OAUTH2_CLIENT_ID=${GOOGLE_OAUTH2_CLIENT_ID}
+      - GOOGLE_OAUTH2_CLIENT_SECRET=${GOOGLE_OAUTH2_CLIENT_SECRET}
+      - GOOGLE_OAUTH2_REDIRECT_URI=${GOOGLE_OAUTH2_REDIRECT_URI}
 volumes:
   postgres_data:
 

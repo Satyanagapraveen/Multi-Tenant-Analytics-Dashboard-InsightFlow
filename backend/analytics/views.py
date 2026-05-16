@@ -11,6 +11,10 @@ from .serializers import EventSerializer
 from rest_framework.views import APIView 
 from rest_framework.response import Response
 from django.db.models import Count
+from django.core.cache import cache
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+from datetime import timedelta
 
 class EventIngestView(generics.CreateAPIView):
     serializer_class = EventSerializer
@@ -44,6 +48,17 @@ class DashboardSummaryView(APIView):
         if not is_member:
             raise PermissionDenied("You do not have access to this workspace.")
 
+        # --- NEW CACHING LOGIC STARTS HERE ---
+        cache_key = f"workspace_{workspace.id}_dashboard_summary"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            print("CACHE HIT! Serving from Redis RAM.")
+            return Response(cached_data)
+
+        print("CACHE MISS! Calculating in Postgres.")
+        
+        # --- ORIGINAL QUERY LOGIC ---
         total_events = Event.objects.filter(workspace=workspace).count()
 
         events_by_type = (
@@ -53,7 +68,41 @@ class DashboardSummaryView(APIView):
             .order_by('-count')
         )
 
-        return Response({
+        data = {
             "total_events": total_events,
             "events_by_type": list(events_by_type)
-        })
+        }
+
+        # --- STORE RESULT IN REDIS ---
+        cache.set(cache_key, data, timeout=60*15)
+
+        return Response(data)
+    
+
+class TimeSeriesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, workspace_slug):
+        workspace = get_object_or_404(Workspace, slug=workspace_slug)
+
+        is_member = WorkspaceMembership.objects.filter(
+            user=request.user,
+            workspace=workspace
+        ).exists()
+
+        if not is_member:
+            raise PermissionDenied("You do not have access to this workspace.")
+
+        period = request.query_params.get('period', '7d')
+        days = int(period.replace('d', ''))
+        start_date = timezone.now() - timedelta(days=days)
+
+        timeseries_data = (
+            Event.objects.filter(workspace=workspace, created_at__gte=start_date)
+            .annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(count=Count('id'))
+            .order_by('date')
+        )
+
+        return Response(list(timeseries_data))
