@@ -21,30 +21,14 @@ from datetime import timedelta
 @method_decorator(csrf_exempt, name='dispatch')
 class EventIngestView(generics.CreateAPIView):
     serializer_class = EventSerializer
-    permission_classes = [AllowAny] # Unlocked!
-
-    def perform_create(self, serializer):
-        # 1. Grab the slug from the URL
-        workspace_slug = self.kwargs.get('workspace_slug')
-        
-        # 2. Find the workspace (crashes with 404 if someone tries a fake slug)
-        workspace = get_object_or_404(Workspace, slug=workspace_slug)
-
-        # 3. Save the event directly. No user checks required!
-        serializer.save(workspace=workspace)
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
         workspace_slug = self.kwargs.get('workspace_slug')
         workspace = get_object_or_404(Workspace, slug=workspace_slug)
 
-        is_member = WorkspaceMembership.objects.filter(
-            user=self.request.user,
-            workspace=workspace
-        ).exists()
-
-        if not is_member:
-            raise PermissionDenied("You do not have access to this workspace.")
-
+        # Notice how there are ZERO references to self.request.user here.
+        # We just grab the workspace and save the event.
         serializer.save(workspace=workspace)
 
 class DashboardSummaryView(APIView):
