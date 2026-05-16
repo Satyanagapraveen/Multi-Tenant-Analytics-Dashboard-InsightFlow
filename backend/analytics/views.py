@@ -1,8 +1,10 @@
 from django.shortcuts import render
 
 # Create your views here.
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny 
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from workspaces.models import Workspace, WorkspaceMembership
@@ -16,9 +18,20 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EventIngestView(generics.CreateAPIView):
     serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny] # Unlocked!
+
+    def perform_create(self, serializer):
+        # 1. Grab the slug from the URL
+        workspace_slug = self.kwargs.get('workspace_slug')
+        
+        # 2. Find the workspace (crashes with 404 if someone tries a fake slug)
+        workspace = get_object_or_404(Workspace, slug=workspace_slug)
+
+        # 3. Save the event directly. No user checks required!
+        serializer.save(workspace=workspace)
 
     def perform_create(self, serializer):
         workspace_slug = self.kwargs.get('workspace_slug')
