@@ -20,7 +20,7 @@ class GoogleLoginView(APIView):
             'code': code,
             'client_id': os.environ.get('GOOGLE_OAUTH2_CLIENT_ID'),
             'client_secret': os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRET'),
-            'redirect_uri': os.environ.get('GOOGLE_OAUTH2_REDIRECT_URI'),
+            'redirect_uri':'postmessage',
             'grant_type': 'authorization_code',
         }
         
