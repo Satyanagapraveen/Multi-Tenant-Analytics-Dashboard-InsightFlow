@@ -8,6 +8,8 @@ from rest_framework import status
 from django.contrib.auth import login, logout
 from rest_framework.permissions import IsAuthenticated
 from .models import User
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 class GoogleLoginView(APIView):
     def post(self, request):
@@ -58,7 +60,7 @@ class GoogleLoginView(APIView):
             'name': user.name,
             'avatar_url': user.avatar_url
         })
-
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
