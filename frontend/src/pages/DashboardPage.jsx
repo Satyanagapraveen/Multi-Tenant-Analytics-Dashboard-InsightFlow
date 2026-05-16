@@ -1,14 +1,17 @@
 import { useAuth } from '../features/auth/AuthContext';
-import { useWorkspaces, useDashboardSummary, useTimeSeries } from '../hooks/useAnalytics';
+import { useState } from 'react';
+import { useWorkspaces, useDashboardSummary, useTimeSeries, useCreateWorkspace } from '../hooks/useAnalytics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, MousePointer2, LogIn, LayoutDashboard } from 'lucide-react';
+import { Activity, MousePointer2, LogIn, LayoutDashboard, PlusCircle } from 'lucide-react';
 
 export default function DashboardPage() {
+    
   const { user } = useAuth();
   
   // 1. Get workspaces first
   const { data: workspaces, isLoading: loadingWorkspaces } = useWorkspaces();
-  
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const { mutate: createWorkspace, isPending: isCreating } = useCreateWorkspace();
   // 2. Safely grab the first workspace's slug (if it exists)
   const activeSlug = workspaces?.[0]?.slug;
 
@@ -20,8 +23,45 @@ export default function DashboardPage() {
     return <div className="flex h-screen items-center justify-center">Loading Analytics...</div>;
   }
 
-  if (!workspaces || workspaces.length === 0) {
-    return <div className="p-10 text-xl font-semibold">You don't have any workspaces yet.</div>;
+ if (!workspaces || workspaces.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-100 max-w-md w-full">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-slate-900">Welcome to InsightFlow</h2>
+            <p className="text-slate-500 mt-2">Let's create your first workspace to start tracking analytics.</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Company / Workspace Name</label>
+              <input
+                type="text"
+                value={newWorkspaceName}
+                onChange={(e) => setNewWorkspaceName(e.target.value)}
+                placeholder="e.g. Acme Corp"
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
+            
+            <button
+              onClick={() => createWorkspace(newWorkspaceName)}
+              disabled={isCreating || !newWorkspaceName}
+              className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isCreating ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <PlusCircle className="w-5 h-5" />
+                  Create Workspace
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
