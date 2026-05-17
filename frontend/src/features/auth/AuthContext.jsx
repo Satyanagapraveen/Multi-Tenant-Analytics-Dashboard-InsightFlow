@@ -22,11 +22,22 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  const logoutUser = async () => {
+    try {
+      await apiClient.post('/api/auth/logout/');
+    } catch (error) {
+      console.error("Logout failed on server, clearing local state anyway", error);
+    } finally {
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, setUser }}>
+    <AuthContext.Provider value={{ user, isLoading, setUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => useContext(AuthContext);

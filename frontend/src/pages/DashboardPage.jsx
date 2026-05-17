@@ -2,11 +2,11 @@ import { useAuth } from '../features/auth/AuthContext';
 import { useState } from 'react';
 import { useWorkspaces, useDashboardSummary, useTimeSeries, useCreateWorkspace } from '../hooks/useAnalytics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, MousePointer2, LogIn, LayoutDashboard, PlusCircle } from 'lucide-react';
+import { Activity, MousePointer2, LogIn, LayoutDashboard, PlusCircle,LogOut } from 'lucide-react';
 
 export default function DashboardPage() {
     
-  const { user } = useAuth();
+  const { user, logoutUser } = useAuth();
   
   // 1. Get workspaces first
   const { data: workspaces, isLoading: loadingWorkspaces } = useWorkspaces();
@@ -67,9 +67,18 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Analytics Overview</h1>
-        <p className="text-slate-500">Workspace: <span className="font-semibold text-blue-600">{workspaces[0].name}</span></p>
+      <header className="mb-8 flex justify-between items-center">
+        <div>
+            <h1 className="text-3xl font-bold text-slate-900">Analytics Overview</h1>
+            <p className="text-slate-500">Workspace: <span className="font-semibold text-blue-600">{workspaces[0].name}</span></p>
+        </div>
+        <button 
+          onClick={logoutUser}
+          className="flex items-center gap-2 text-slate-500 hover:text-red-600 transition-colors px-4 py-2 rounded-lg hover:bg-red-50"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sign Out</span>
+        </button>
       </header>
 
       {/* Top Metric Cards */}
